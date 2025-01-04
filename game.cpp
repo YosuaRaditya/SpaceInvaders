@@ -13,10 +13,10 @@ const int HEIGHT = 20;
 class Spaceship {
 public:
     int x, y;
-    Spaceship() : x(WIDTH/2), y(HEIGHT-2) {}
+    Spaceship() : x(WIDTH / 2), y(HEIGHT - 2) {}
 
     void moveLeft() { if (x > 0) x--; }
-    void moveRight() { if (x < WIDTH-1) x++; }
+    void moveRight() { if (x < WIDTH - 1) x++; }
 };
 
 class Alien {
@@ -33,11 +33,27 @@ public:
     Bullet(int px, int py) : x(px), y(py), active(true) {}
 };
 
+class Barrier {
+public:
+    int x, y;
+    int direction;
+    Barrier() : x(WIDTH / 2), y(HEIGHT - 6), direction(1) {}
+
+    void move() {
+        x += direction;
+        if (x <= 1 || x >= WIDTH - 2) {
+            direction = -direction;
+        }
+    }
+};
+
 class Game {
 private:
     Spaceship player;
     vector<Alien> aliens;
     vector<Bullet> bullets;
+    Barrier barrier;
+    int level = 1;
     int score;
     bool gameOver;
 
@@ -59,7 +75,7 @@ public:
         system("cls");
 
         // Gambar batas atas
-        for (int i = 0; i < WIDTH+2; i++) {
+        for (int i = 0; i < WIDTH + 2; i++) {
             cout << "#";
         }
         cout << endl;
@@ -94,18 +110,27 @@ public:
                     }
                 }
 
+                // Gambar penghalang
+                if (level == 2 && y == barrier.y && x >= barrier.x && x < barrier.x + 5) {
+                    cout << "B";
+                    drawn = true;
+                }
+
                 if (!drawn) cout << " ";
             }
             cout << "#" << endl;
         }
 
         // Gambar batas bawah
-        for (int i = 0; i < WIDTH+2; i++) {
+        for (int i = 0; i < WIDTH + 2; i++) {
             cout << "#";
         }
         cout << endl;
 
         cout << "Score: " << score << endl;
+        cout << "Level: " << level << endl;
+
+            cout << "#" << endl;
     }
 
     void handleInput() {
@@ -114,9 +139,7 @@ public:
             switch (key) {
                 case 'a': player.moveLeft(); break;
                 case 'd': player.moveRight(); break;
-                case ' ':
-                    bullets.push_back(Bullet(player.x, player.y - 1));
-                    break;
+                case ' ': bullets.push_back(Bullet(player.x, player.y - 1)); break;
             }
         }
     }
@@ -136,10 +159,19 @@ public:
                     }
                 }
 
+                // Cek tabrakan dengan penghalang
+                if (level > 1 && bullet.y == barrier.y && bullet.x >= barrier.x && bullet.x < barrier.x + 5) {
+                    bullet.active = false;
+                }
+
                 // Hapus peluru yang keluar arena
                 if (bullet.y < 0) bullet.active = false;
             }
         }
+    }
+
+    void updateBarrier() {
+        barrier.move();
     }
 
     bool checkWin() {
@@ -154,10 +186,19 @@ public:
             drawGame();
             handleInput();
             updateBullets();
+            if (level == 2){
+                updateBarrier();
+            }
 
             if (checkWin()) {
-                cout << "Selamat! Kamu Menang!" << endl;
-                break;
+                bullets.clear();
+                if (level == 2){
+                    cout << "Selamat! Kamu Menang!" << endl;
+                    break;
+                }
+                level++;
+                cout << "Level " << level << " dimulai!" << endl;
+                initAliens();
             }
 
             Sleep(100);
