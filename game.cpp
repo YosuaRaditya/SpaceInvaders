@@ -111,7 +111,7 @@ public:
                 }
 
                 // Gambar penghalang
-                if (level == 2 && y == barrier.y && x >= barrier.x && x < barrier.x + 5) {
+                if (level > 1 && y == barrier.y && x >= barrier.x && x < barrier.x + 5) {
                     cout << "B";
                     drawn = true;
                 }
