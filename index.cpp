@@ -21,322 +21,298 @@ struct HighScore {
     int level;
 };
 
-vector<HighScore> highScores;
-
-class Spaceship {
-public:
+struct Spaceship {
     int x, y;
-    int bullets;  
-    Spaceship() : x(WIDTH / 2), y(HEIGHT - 2), bullets(50) {} 
-
-    void moveLeft() { if (x > 0) x--; }
-    void moveRight() { if (x < WIDTH - 1) x++; }
+    int bullets;
 };
 
-class Alien {
-public:
+struct Alien {
     int x, y;
     bool alive;
     int health;
-    int direction;  
-    Alien(int px, int py, int h = 1) : x(px), y(py), alive(true), health(h), direction(1) {}
-
-    void move() {
-        x += direction;
-        if (x <= 0 || x >= WIDTH - 1) {
-            direction = -direction;  
-        }
-    }
+    int direction;
 };
 
-class Bullet {
-public:
+struct Bullet {
     int x, y;
     bool active;
-    Bullet(int px, int py) : x(px), y(py), active(true) {}
 };
 
-class Barrier {
-public:
+struct Barrier {
     int x, y;
     int direction;
-    Barrier() : x(WIDTH / 2), y(HEIGHT - 6), direction(1) {}
-
-    void move() {
-        x += direction;
-        if (x <= 1 || x >= WIDTH - 2) {
-            direction = -direction;
-        }
-    }
 };
 
-class Game {
-private:
-    Spaceship player;
-    vector<Alien> aliens;
-    vector<Bullet> bullets;
-    vector<Bullet> enemyBullets;  
-    Barrier barrier;
-    int level;
-    int score;
-    bool gameOver;
-    int& goldRef;
+vector<HighScore> highScores;
+Spaceship player;
+vector<Alien> aliens;
+vector<Bullet> bullets;
+vector<Bullet> enemyBullets;
+Barrier barrier;
+int level = 1;
+int score = 0;
+bool gameOver = false;
 
-public:
-    Game(int& globalGold) : level(1), score(0), gameOver(false), goldRef(globalGold) {
-        srand(time(NULL));
-        initAliens();
-    }
+void initAliens() {
+    aliens.clear();
+    enemyBullets.clear();
 
-    void initAliens() {
-        aliens.clear();
-        enemyBullets.clear();
-
-        if (level == 1 || level == 2) {
-            for (int i = 0; i < 5; i++) {
-                for (int j = 0; j < 5; j++) {
-                    aliens.push_back(Alien(j * 4, i * 3));
-                }
+    if (level == 1 || level == 2) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                Alien alien = {j * 4, i * 3, true, 1, 1};
+                aliens.push_back(alien);
             }
-        } else if (level == 3) {
-            for (int i = 0; i < 5; i++) {
-                for (int j = 0; j < 5; j++) {
-                    aliens.push_back(Alien(j * 4, i * 3, 2)); 
-                }
-            }
-            player.bullets = 75;  
         }
-    }
-
-    void drawGame() {
-        system("cls");
-
-        for (int i = 0; i < WIDTH + 2; i++) cout << "#";
-        cout << endl;
-
-        for (int y = 0; y < HEIGHT; y++) {
-            cout << "#";
-            for (int x = 0; x < WIDTH; x++) {
-                bool drawn = false;
-
-                if (x == player.x && y == player.y) {
-                    cout << "A";
-                    drawn = true;
-                }
-
-                for (auto& alien : aliens) {
-                    if (alien.alive && alien.x == x && alien.y == y) {
-                        cout << (level == 3 ? "M" : "W");
-                        drawn = true;
-                        break;
-                    }
-                }
-
-                for (auto& bullet : bullets) {
-                    if (bullet.active && bullet.x == x && bullet.y == y) {
-                        cout << "|";
-                        drawn = true;
-                        break;
-                    }
-                }
-
-                for (auto& bullet : enemyBullets) {
-                    if (bullet.active && bullet.x == x && bullet.y == y) {
-                        cout << "v";
-                        drawn = true;
-                        break;
-                    }
-                }
-
-                if (level >= 2 && y == barrier.y && x >= barrier.x && x < barrier.x + 5) {
-                    cout << "_";
-                    drawn = true;
-                }
-
-                if (!drawn) cout << " ";
+    } else if (level == 3) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                Alien alien = {j * 4, i * 3, true, 2, 1};
+                aliens.push_back(alien);
             }
-            cout << "#" << endl;
         }
-
-        for (int i = 0; i < WIDTH + 2; i++) cout << "#";
-        cout << endl;
-
-        cout << "Score: " << score << endl;
-        cout << "Level: " << level << endl;
-        cout << "Peluru: " << player.bullets << endl;
-        cout << "Gold: " << goldRef << endl;
-        cout << "HP: " << health << endl;
-        cout << "Shield: " << shield << endl;
-        cout << "Double Gold: " << doublegold << endl;
+        player.bullets = 75;
     }
+}
 
-    void handleInput() {
-        if (_kbhit()) {
-            char key = _getch();
-            switch (key) {
-                case 'a': player.moveLeft(); break;
-                case 'd': player.moveRight(); break;
-                case ' ':
-                    if (player.bullets > 0) {
-                        bullets.push_back(Bullet(player.x, player.y - 1));
-                        player.bullets--;
-                    }
+void drawGame() {
+    system("cls");
+
+    for (int i = 0; i < WIDTH + 2; i++) cout << "#";
+    cout << endl;
+
+    for (int y = 0; y < HEIGHT; y++) {
+        cout << "#";
+        for (int x = 0; x < WIDTH; x++) {
+            bool drawn = false;
+
+            if (x == player.x && y == player.y) {
+                cout << "A";
+                drawn = true;
+            }
+
+            for (auto& alien : aliens) {
+                if (alien.alive && alien.x == x && alien.y == y) {
+                    cout << (level == 3 ? "M" : "W");
+                    drawn = true;
                     break;
+                }
+            }
+
+            for (auto& bullet : bullets) {
+                if (bullet.active && bullet.x == x && bullet.y == y) {
+                    cout << "|";
+                    drawn = true;
+                    break;
+                }
+            }
+
+            for (auto& bullet : enemyBullets) {
+                if (bullet.active && bullet.x == x && bullet.y == y) {
+                    cout << "v";
+                    drawn = true;
+                    break;
+                }
+            }
+
+            if (level >= 2 && y == barrier.y && x >= barrier.x && x < barrier.x + 5) {
+                cout << "_";
+                drawn = true;
+            }
+
+            if (!drawn) cout << " ";
+        }
+        cout << "#" << endl;
+    }
+
+    for (int i = 0; i < WIDTH + 2; i++) cout << "#";
+    cout << endl;
+
+    cout << "Score: " << score << endl;
+    cout << "Level: " << level << endl;
+    cout << "Peluru: " << player.bullets << endl;
+    cout << "Gold: " << gold << endl;
+    cout << "HP: " << health << endl;
+    cout << "Shield: " << shield << endl;
+    cout << "Double Gold: " << doublegold << endl;
+}
+
+void handleInput() {
+    if (_kbhit()) {
+        char key = _getch();
+        switch (key) {
+            case 'a': if (player.x > 0) player.x--; break;
+            case 'd': if (player.x < WIDTH - 1) player.x++; break;
+            case ' ':
+                if (player.bullets > 0) {
+                    Bullet bullet = {player.x, player.y - 1, true};
+                    bullets.push_back(bullet);
+                    player.bullets--;
+                }
+                break;
+        }
+    }
+}
+
+void enemyCounterAttack(int alienX) {
+    Bullet bullet = {alienX, aliens[0].y + 1, true};
+    enemyBullets.push_back(bullet);
+}
+
+void updateBullets() {
+    for (auto& bullet : bullets) {
+        if (bullet.active) {
+            bullet.y--;
+
+            for (auto& alien : aliens) {
+                if (alien.alive && bullet.x == alien.x && bullet.y == alien.y) {
+                    if (level == 3) {
+                        alien.health--;
+                        if (alien.health <= 0) {
+                            alien.alive = false;
+                            score += 20;
+                            gold += (doublegold > 0) ? 4 : 2;
+                            enemyCounterAttack(alien.x);
+                        }
+                    } else {
+                        alien.alive = false;
+                        score += 10;
+                        gold += (doublegold > 0) ? 4 : 2;
+                        enemyCounterAttack(alien.x);
+                    }
+                    bullet.active = false;
+                    break;
+                }
+            }
+
+            if (level >= 2 && bullet.y == barrier.y && bullet.x >= barrier.x && bullet.x < barrier.x + 5) {
+                bullet.active = false;
+            }
+
+            if (bullet.y < 0) bullet.active = false;
+        }
+    }
+
+    for (auto& bullet : enemyBullets) {
+        if (bullet.active) {
+            bullet.y++;
+            if (bullet.y >= HEIGHT) {
+                bullet.active = false;
+            }
+            if (bullet.x == player.x && bullet.y == player.y) {
+                if (shield > 0) {
+                    shield--;
+                    cout << "Shield melindungi! Shield tersisa: " << shield << endl;
+                    Sleep(1000);
+                } else if (health > 0) {
+                    health--;
+                    cout << "Health berkurang! Health tersisa: " << health << endl;
+                    Sleep(1000);
+                } else {
+                    gameOver = true;
+                }
+                bullet.active = false;
             }
         }
     }
 
-    void enemyCounterAttack(int alienX) {
-        enemyBullets.push_back(Bullet(alienX, aliens[0].y + 1));
-    }
-
-    void updateBullets() {
+    if (player.bullets <= 0) {
+        bool canShoot = false;
         for (auto& bullet : bullets) {
             if (bullet.active) {
-                bullet.y--;
-
-                for (auto& alien : aliens) {
-                    if (alien.alive && bullet.x == alien.x && bullet.y == alien.y) {
-                        if (level == 3) {
-                            alien.health--;
-                            if (alien.health <= 0) {
-                                alien.alive = false;
-                                score += 20;
-                                goldRef += (doublegold > 0) ? 4 : 2;
-                                enemyCounterAttack(alien.x);  
-                            }
-                        } else {
-                            alien.alive = false;
-                            score += 10;
-                            goldRef += (doublegold > 0) ? 4 : 2;
-                            enemyCounterAttack(alien.x);  
-                        }
-                        bullet.active = false;
-                        break;
-                    }
-                }
-
-                if (level >= 2 && bullet.y == barrier.y && bullet.x >= barrier.x && bullet.x < barrier.x + 5) {
-                    bullet.active = false;
-                }
-
-                if (bullet.y < 0) bullet.active = false;
+                canShoot = true;
+                break;
             }
         }
-
-        for (auto& bullet : enemyBullets) {
-            if (bullet.active) {
-                bullet.y++;
-                if (bullet.y >= HEIGHT) {
-                    bullet.active = false;
-                }
-                if (bullet.x == player.x && bullet.y == player.y) {
-                    if (shield > 0) {
-                        shield--;
-                        cout << "Shield melindungi! Shield tersisa: " << shield << endl;
-                        Sleep(1000);
-                    } else if (health > 0) {
-                        health--;
-                        cout << "Health berkurang! Health tersisa: " << health << endl;
-                        Sleep(1000);
-                    } else {
-                        gameOver = true;
-                    }
-                    bullet.active = false;
-                }
-            }
+        if (!canShoot) {
+            cout << "Peluru habis! Game Over!" << endl;
+            gameOver = true;
         }
+    }
+}
 
-        if (player.bullets <= 0) {
-            bool canShoot = false;
-            for (auto& bullet : bullets) {
-                if (bullet.active) {
-                    canShoot = true;
-                    break;
-                }
-            }
-            if (!canShoot) {
-                cout << "Peluru habis! Game Over!" << endl;
-                gameOver = true;
+void updateAliens() {
+    for (auto& alien : aliens) {
+        if (alien.alive && level > 1) {
+            alien.x += alien.direction;
+            if (alien.x <= 0 || alien.x >= WIDTH - 1) {
+                alien.direction = -alien.direction;
             }
         }
     }
+}
 
-    void updateAliens() {
-        for (auto& alien : aliens) {
-            if (alien.alive && level > 1) {  
-                alien.move(); 
+void updateBarrier() {
+    if (level >= 2) {
+        barrier.x += barrier.direction;
+        if (barrier.x <= 1 || barrier.x >= WIDTH - 2) {
+            barrier.direction = -barrier.direction;
+        }
+    }
+}
+
+bool checkWin() {
+    for (auto& alien : aliens) {
+        if (alien.alive) return false;
+    }
+    return true;
+}
+
+void saveHighScore() {
+    string name;
+    cout << "Masukkan nama Anda (maksimal 10 huruf): ";
+    cin >> name;
+    if (name.length() > 10) name = name.substr(0, 10);
+
+    HighScore hs = {name, score, level};
+    highScores.push_back(hs);
+    sort(highScores.begin(), highScores.end(), [](const HighScore& a, const HighScore& b) {
+        return a.score > b.score;
+    });
+
+    ofstream file("highscore.txt");
+    if (file.is_open()) {
+        for (const auto& hs : highScores) {
+            file << hs.name << " " << hs.score << " " << hs.level << endl;
+        }
+        file.close();
+    }
+}
+
+void runGame() {
+    player = {WIDTH / 2, HEIGHT - 2, 50};
+    initAliens();
+    barrier = {WIDTH / 2, HEIGHT - 6, 1};
+
+    while (!gameOver) {
+        drawGame();
+        handleInput();
+        updateBullets();
+        updateAliens();
+        if (level >= 2) updateBarrier();
+
+        if (checkWin()) {
+            bullets.clear();
+            enemyBullets.clear();
+            if (level == 3) {
+                cout << "Selamat! Kamu Menang!" << endl;
+                break;
             }
-        }
-    }
-
-    void updateBarrier() {
-        if (level >= 2) barrier.move();
-    }
-
-    bool checkWin() {
-        for (auto& alien : aliens) {
-            if (alien.alive) return false;
-        }
-        return true;
-    }
-
-    void saveHighScore() {
-        string name;
-        cout << "Masukkan nama Anda (maksimal 10 huruf): ";
-        cin >> name;
-        if (name.length() > 10) name = name.substr(0, 10);
-
-        HighScore hs;
-        hs.name = name;
-        hs.score = score;
-        hs.level = level;
-
-        highScores.push_back(hs);
-        sort(highScores.begin(), highScores.end(), [](const HighScore& a, const HighScore& b) {
-            return a.score > b.score; 
-        });
-
-        ofstream file("highscore.txt");
-        if (file.is_open()) {
-            for (const auto& hs : highScores) {
-                file << hs.name << " " << hs.score << " " << hs.level << endl;
-            }
-            file.close();
-        }
-    }
-
-    void run() {
-        while (!gameOver) {
-            drawGame();
-            handleInput();
-            updateBullets();
-            updateAliens();  // Update pergerakan alien
-            if (level >= 2) updateBarrier();
-
-            if (checkWin()) {
-                bullets.clear();
-                enemyBullets.clear();
-                if (level == 3) {
-                    cout << "Selamat! Kamu Menang!" << endl;
-                    break;
-                }
-                level++;
-                player.bullets = (level == 3) ? 75 : 50; 
-                cout << "Level " << level << " dimulai!" << endl;
-                Sleep(2000);
-                initAliens();
-            }
-
-            Sleep(100);
+            level++;
+            player.bullets = (level == 3) ? 75 : 50;
+            cout << "Level " << level << " dimulai!" << endl;
+            Sleep(2000);
+            initAliens();
         }
 
-        if (gameOver) {
-            cout << "Game Over! Skor Akhir: " << score << endl;
-            saveHighScore();
-        }
+        Sleep(100);
     }
-};
+
+    if (gameOver) {
+        cout << "Game Over! Skor Akhir: " << score << endl;
+        saveHighScore();
+    }
+}
 
 void loadHighScores() {
     ifstream file("highscore.txt");
@@ -421,8 +397,7 @@ int main() {
 
         if (menu == 1) {
             system("cls");
-            Game game(gold);
-            game.run();
+            runGame();
             system("pause");
         } else if (menu == 2) {
             do {
