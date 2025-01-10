@@ -53,7 +53,7 @@ int level = 1;
 int score = 0;
 bool gameOver = false;
 
-void initAliens() {
+void initAliens() { // Mengatur alien di setiap level
     aliens.clear();
     enemyBullets.clear();
 
@@ -71,7 +71,7 @@ void initAliens() {
                 aliens.push_back(alien);
             }
         }
-        player.bullets = 75;
+        player.bullets = 100;
     }
 }
 
@@ -245,8 +245,14 @@ void updateAliens() {
 void updateBarrier() {
     if (level >= 2) {
         barrier.x += barrier.direction;
-        if (barrier.x <= 1 || barrier.x >= WIDTH - 2) {
-            barrier.direction = -barrier.direction;
+        if (barrier.x <= 1) {
+            barrier.x = 1; // Pastikan barrier tidak melewati batas kiri
+            barrier.direction = 1; // Balik arah ke kanan
+        }
+        // Periksa batas kanan
+        else if (barrier.x + 5 >= WIDTH - 1) {
+            barrier.x = WIDTH - 6; // Pastikan barrier tidak melewati batas kanan
+            barrier.direction = -1; // Balik arah ke kiri
         }
     }
 }
@@ -299,7 +305,7 @@ void runGame() {
                 break;
             }
             level++;
-            player.bullets = (level == 3) ? 75 : 50;
+            player.bullets = (level == 3) ? 100 : 75;
             cout << "Level " << level << " dimulai!" << endl;
             Sleep(2000);
             initAliens();
@@ -365,6 +371,27 @@ void loadGame() {
     }
 }
 
+void resetGame() {
+    // Reset semua variabel ke keadaan awal
+    level = 1;
+    score = 0;
+    gameOver = false;
+
+    // Reset player
+    player = {WIDTH / 2, HEIGHT - 2, 50};
+
+    // Reset aliens, bullets, dan enemyBullets
+    aliens.clear();
+    bullets.clear();
+    enemyBullets.clear();
+
+    // Reset barrier
+    barrier = {WIDTH / 2, HEIGHT - 6, 1};
+
+    // Inisialisasi aliens untuk level 1
+    initAliens();
+}
+
 int main() {
     loadHighScores();
 
@@ -379,10 +406,7 @@ int main() {
     if (newOrLoad == 2) {
         loadGame();
     } else {
-        gold = 100;
-        shield = 0;
-        health = 0;
-        doublegold = 0;
+        resetGame(); // Reset game ke keadaan awal
     }
 
     do {
@@ -397,6 +421,7 @@ int main() {
 
         if (menu == 1) {
             system("cls");
+            resetGame(); // Reset game sebelum memulai permainan baru
             runGame();
             system("pause");
         } else if (menu == 2) {
